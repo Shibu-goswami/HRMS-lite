@@ -73,3 +73,71 @@ HRMS-lite/
 │
 └── README.md
 ```
+
+
+---
+
+## Backend Setup
+
+### 1️⃣ Go to backend folder
+
+```
+cd backend
+```
+
+### 2️⃣ Create virtual environment
+
+```
+python -m venv venv
+source venv/bin/activate # Mac/Linux
+venv\Scripts\activate # Windows
+```
+
+### 3️⃣ Install dependencies
+
+```
+pip install -r requirements.txt
+```
+
+### 4️⃣ Add Environment Variable
+
+Create `.env` file:
+```
+MONGO_URL=your_mongodb_connection_string
+```
+
+### 5️⃣ Run server
+
+```
+uvicorn app.main:app --reload
+```
+
+---
+
+## Frontend Setup
+
+### 1️⃣ Go to frontend folder
+
+```
+cd frontend
+```
+
+### 2️⃣ Install dependencies
+
+```
+npm install
+```
+
+### 3️⃣ Start development server
+
+```
+npm run dev
+```
+
+## Tech Stack
+
+- FastAPI
+- React
+- MongoDB
+- Redux Toolkit Query
+- Tailwind CSS
