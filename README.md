@@ -39,7 +39,7 @@ A Full-Stack Human Resource Management System built with:
 ---
 
 ## Project Structure
-
+```
 HRMS-lite/
 │
 ├── backend/
@@ -72,4 +72,4 @@ HRMS-lite/
 │ ├── package.json
 │
 └── README.md
-
+```
