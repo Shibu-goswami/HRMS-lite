@@ -3,7 +3,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 export const attendanceApi = createApi({
   reducerPath: "attendanceApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://127.0.0.1:8000/",
+    baseUrl: "https://hrms-lite-production-f1e9.up.railway.app/",
   }),
   tagTypes: ["Attendance"],
   endpoints: (builder) => ({
