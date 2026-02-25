@@ -45,15 +45,31 @@ HRMS-lite/
 ├── backend/
 │ ├── app/
 │ │ ├── main.py
-│ │ ├── routes/
 │ │ ├── database.py
+│ │ ├── routes/
+│ │ │ ├── employee.py
+│ │ │ ├── attendance.py
+│ │ ├── models/
+│ │ └── init.py
 │ │
 │ ├── requirements.txt
 │ ├── Procfile
 │
 ├── frontend/
 │ ├── src/
+│ │ ├── pages/
+│ │ │ ├── Dashboard.jsx
+│ │ │ ├── Employees.jsx
+│ │ │ ├── Attendance.jsx
+│ │ ├── features/
+│ │ │ ├── employeeApi.js
+│ │ │ ├── attendanceApi.js
+│ │ ├── components/
+│ │ ├── App.jsx
+│ │ └── main.jsx
+│ │
 │ ├── vercel.json
 │ ├── package.json
 │
 └── README.md
+
