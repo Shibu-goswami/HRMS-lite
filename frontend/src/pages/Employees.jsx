@@ -21,7 +21,9 @@ function Employees() {
   const [isOpen, setIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
-
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState("");
+  const [filterDept, setFilterDept] = useState("");
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState(null);
 
@@ -43,7 +45,7 @@ function Employees() {
 
     if (!form.employee_id.trim())
       errors.employee_id = "Employee ID is required";
-    else if (form.employee_id.length < 3)
+    else if (form.employee_id.length < 1)
       errors.employee_id = "Employee ID must be at least 3 characters";
 
     if (!form.name.trim()) errors.name = "Name is required";
@@ -190,7 +192,24 @@ function Employees() {
       )}
     </div>
   );
+  const processedEmployees = employees
+    ?.filter((emp) => {
+      const matchesSearch =
+        emp.name.toLowerCase().includes(search.toLowerCase()) ||
+        emp.email.toLowerCase().includes(search.toLowerCase()) ||
+        emp.employee_id.toLowerCase().includes(search.toLowerCase());
 
+      const matchesDept = filterDept ? emp.department === filterDept : true;
+
+      return matchesSearch && matchesDept;
+    })
+    ?.sort((a, b) => {
+      if (sortBy === "salary_asc") return a.salary - b.salary;
+      if (sortBy === "salary_desc") return b.salary - a.salary;
+      if (sortBy === "name_asc") return a.name.localeCompare(b.name);
+      if (sortBy === "name_desc") return b.name.localeCompare(a.name);
+      return 0;
+    });
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -218,7 +237,7 @@ function Employees() {
           <p className="p-6 text-red-500 text-center">
             {error?.data?.detail || "Failed to load employees"}
           </p>
-        )} 
+        )}
         {/* Empty State */}
         {!isLoading && employees && employees.length === 0 && (
           <div className="p-16 text-center">
@@ -230,7 +249,72 @@ function Employees() {
             </p>
           </div>
         )}
-        {employees && employees.length > 0 && (
+        {/* ORIGINAL EMPTY (no data from backend) */}
+        {!isLoading && employees?.length === 0 && (
+          <div className="p-16 text-center">
+            <h3 className="text-xl font-semibold text-gray-800">
+              No Employees Found
+            </h3>
+            <p className="text-gray-500 mt-2">
+              Click “Add Employee” to create your first employee.
+            </p>
+          </div>
+        )}
+
+        {/* SEARCH + FILTER BAR */}
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between p-4">
+          <input
+            type="text"
+            placeholder="Search by name, email, ID..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full md:w-1/3 border px-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500"
+          />
+
+          <div className="flex gap-3 w-full md:w-auto">
+            <select
+              value={filterDept}
+              onChange={(e) => setFilterDept(e.target.value)}
+              className="border px-3 py-2 rounded-xl"
+            >
+              <option value="">All Departments</option>
+              {[...new Set(employees?.map((e) => e.department))].map((dept) => (
+                <option key={dept} value={dept}>
+                  {dept}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="border px-3 py-2 rounded-xl"
+            >
+              <option value="">Sort By</option>
+              <option value="salary_asc">Salary ↑</option>
+              <option value="salary_desc">Salary ↓</option>
+              <option value="name_asc">Name A-Z</option>
+              <option value="name_desc">Name Z-A</option>
+            </select>
+          </div>
+        </div>
+
+        {/* FILTERED EMPTY STATE */}
+        {!isLoading &&
+          employees?.length > 0 &&
+          processedEmployees?.length === 0 && (
+            <div className="p-16 text-center">
+              <h3 className="text-xl font-semibold text-gray-800">
+                No Results Found
+              </h3>
+              <p className="text-gray-500 mt-2">
+                Try adjusting your search or filters.
+              </p>
+            </div>
+          )}
+
+        {/* TABLE */}
+        {processedEmployees?.length > 0 && (
           <table className="w-full text-left">
             <thead className="bg-gray-50 text-sm uppercase text-gray-600">
               <tr>
@@ -243,15 +327,28 @@ function Employees() {
                 <th className="px-6 py-4 text-right">Action</th>
               </tr>
             </thead>
+
             <tbody className="divide-y">
-              {employees.map((emp) => (
-                <tr key={emp.id} className="hover:bg-gray-50">
+              {processedEmployees.map((emp) => (
+                <tr key={emp.id} className="hover:bg-blue-50 transition">
                   <td className="px-6 py-4">{emp.employee_id}</td>
                   <td className="px-6 py-4">{emp.name}</td>
                   <td className="px-6 py-4">{emp.email}</td>
-                  <td className="px-6 py-4">{emp.department}</td>
+
+                  {/* Department Badge */}
+                  <td className="px-6 py-4">
+                    <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm">
+                      {emp.department}
+                    </span>
+                  </td>
+
                   <td className="px-6 py-4">{emp.role}</td>
-                  <td className="px-6 py-4">₹ {emp.salary.toLocaleString()}</td>
+
+                  {/* Salary Highlight */}
+                  <td className="px-6 py-4 font-semibold text-green-600">
+                    ₹ {emp.salary.toLocaleString()}
+                  </td>
+
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-4">
                       <button

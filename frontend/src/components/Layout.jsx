@@ -52,14 +52,8 @@ function Layout({ children }) {
         {/* Topbar */}
         <header className="bg-white shadow-sm px-8 py-4 flex justify-between items-center">
           <h2 className="text-xl font-semibold text-gray-800">
-            Admin Dashboard
+             Dashboard
           </h2>
-
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">
-              A
-            </div>
-          </div>
         </header>
 
         {/* Page Content */}

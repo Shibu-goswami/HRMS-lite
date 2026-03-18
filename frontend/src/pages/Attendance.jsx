@@ -13,10 +13,8 @@ function Attendance() {
   /* ===============================
      Employees Query
   =============================== */
-  const {
-    data: employees,
-    isLoading: employeesLoading,
-  } = useGetEmployeesQuery();
+  const { data: employees, isLoading: employeesLoading } =
+    useGetEmployeesQuery();
 
   /* ===============================
      Attendance Query
@@ -44,7 +42,9 @@ function Attendance() {
 
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [recordToDelete, setRecordToDelete] = useState(null);
-
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [sortBy, setSortBy] = useState("");
   const [formError, setFormError] = useState(null);
 
   const [form, setForm] = useState({
@@ -72,16 +72,44 @@ function Attendance() {
   const filteredAttendance = useMemo(() => {
     if (!attendanceRecords || !employees) return [];
     return attendanceRecords.filter(
-      (record) => employeeMap[record.employee_id]
+      (record) => employeeMap[record.employee_id],
     );
   }, [attendanceRecords, employeeMap, employees]);
 
+  const processedAttendance = useMemo(() => {
+    return filteredAttendance
+      ?.filter((record) => {
+        const name = employeeMap[record.employee_id]?.toLowerCase() || "";
+
+        const matchesSearch = name.includes(search.toLowerCase());
+
+        const matchesStatus = filterStatus
+          ? record.status === filterStatus
+          : true;
+
+        return matchesSearch && matchesStatus;
+      })
+      ?.sort((a, b) => {
+        if (sortBy === "date_asc") return new Date(a.date) - new Date(b.date);
+        if (sortBy === "date_desc") return new Date(b.date) - new Date(a.date);
+        if (sortBy === "name_asc")
+          return employeeMap[a.employee_id]?.localeCompare(
+            employeeMap[b.employee_id],
+          );
+        if (sortBy === "name_desc")
+          return employeeMap[b.employee_id]?.localeCompare(
+            employeeMap[a.employee_id],
+          );
+        return 0;
+      });
+  }, [filteredAttendance, search, filterStatus, sortBy, employeeMap]);
   /* ===============================
      Stats
   =============================== */
   const totalRecords = filteredAttendance.length;
-  const presentCount =
-    filteredAttendance.filter((r) => r.status === "Present").length;
+  const presentCount = filteredAttendance.filter(
+    (r) => r.status === "Present",
+  ).length;
 
   /* ===============================
      Modal Handlers
@@ -191,8 +219,6 @@ function Attendance() {
         </button>
       </div>
 
-   
-
       {/* Table */}
       <div className="bg-white rounded-2xl shadow-sm border overflow-hidden">
         {isLoading && (
@@ -207,13 +233,59 @@ function Attendance() {
           </p>
         )}
 
+        {/* No Records at all */}
         {!isLoading && filteredAttendance.length === 0 && (
           <p className="p-6 text-gray-500 text-center">
             No attendance records found.
           </p>
         )}
 
-        {filteredAttendance.length > 0 && (
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between p-4">
+          {/* Search */}
+          <input
+            type="text"
+            placeholder="Search by employee name..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full md:w-1/3 border px-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500"
+          />
+
+          <div className="flex gap-3 w-full md:w-auto">
+            {/* Status Filter */}
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="border px-3 py-2 rounded-xl"
+            >
+              <option value="">All Status</option>
+              <option value="Present">Present</option>
+              <option value="Absent">Absent</option>
+            </select>
+
+            {/* Sort */}
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="border px-3 py-2 rounded-xl"
+            >
+              <option value="">Sort By</option>
+              <option value="date_desc">Date ↓</option>
+              <option value="date_asc">Date ↑</option>
+              <option value="name_asc">Name A-Z</option>
+              <option value="name_desc">Name Z-A</option>
+            </select>
+          </div>
+        </div>
+
+        {/* No Results after search/filter */}
+        {!isLoading &&
+          filteredAttendance.length > 0 &&
+          processedAttendance.length === 0 && (
+            <p className="p-6 text-gray-500 text-center">
+              No results found. Try changing filters.
+            </p>
+          )}
+        {processedAttendance.length > 0 && (
           <table className="w-full text-left">
             <thead className="bg-gray-50 text-gray-600 text-sm uppercase">
               <tr>
@@ -225,7 +297,7 @@ function Attendance() {
             </thead>
 
             <tbody className="divide-y">
-              {filteredAttendance.map((record) => (
+              {processedAttendance.map((record) => (
                 <tr key={record.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 font-medium">
                     {employeeMap[record.employee_id]}
@@ -372,16 +444,12 @@ function Attendance() {
               animate={{ scale: 1 }}
               exit={{ scale: 0.9 }}
             >
-              <h2 className="text-lg font-semibold mb-4">
-                Confirm Delete
-              </h2>
+              <h2 className="text-lg font-semibold mb-4">Confirm Delete</h2>
 
               <p className="mb-6">
                 Delete attendance for{" "}
-                <strong>
-                  {employeeMap[recordToDelete?.employee_id]}
-                </strong>{" "}
-                on {recordToDelete?.date}?
+                <strong>{employeeMap[recordToDelete?.employee_id]}</strong> on{" "}
+                {recordToDelete?.date}?
               </p>
 
               <div className="flex justify-end gap-3">
@@ -397,9 +465,7 @@ function Attendance() {
                   disabled={isDeleting}
                   className="px-4 py-2 bg-red-600 text-white rounded-lg flex items-center gap-2"
                 >
-                  {isDeleting && (
-                    <Loader2 size={16} className="animate-spin" />
-                  )}
+                  {isDeleting && <Loader2 size={16} className="animate-spin" />}
                   Delete
                 </button>
               </div>

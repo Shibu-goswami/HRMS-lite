@@ -1,25 +1,23 @@
 import { useMemo } from "react";
+import { motion } from "framer-motion";
+import {
+  Users,
+  CalendarCheck,
+  UserCheck,
+  Percent,
+} from "lucide-react";
+
 import { useGetEmployeesQuery } from "../features/employeeApi";
 import { useGetAttendanceQuery } from "../features/attendanceApi";
-import { motion } from "framer-motion";
-import { Loader2 } from "lucide-react";
 
-function Dashboard() {
-  const {
-    data: employees,
-    isLoading: employeesLoading,
-  } = useGetEmployeesQuery();
-
-  const {
-    data: attendanceRecords,
-    isLoading: attendanceLoading,
-  } = useGetAttendanceQuery();
+export default function Dashboard() {
+  const { data: employees } = useGetEmployeesQuery();
+  const { data: attendanceRecords } = useGetAttendanceQuery();
 
   const today = new Date().toISOString().split("T")[0];
 
   const totalEmployees = employees?.length || 0;
 
-  // 🔥 Employee Map
   const employeeMap = useMemo(() => {
     const map = {};
     employees?.forEach((emp) => {
@@ -28,160 +26,201 @@ function Dashboard() {
     return map;
   }, [employees]);
 
-  // 🔥 Remove deleted employees attendance
   const validAttendance = useMemo(() => {
     if (!attendanceRecords || !employees) return [];
-    const employeeIds = new Set(employees.map((e) => e.id));
+    const ids = new Set(employees.map((e) => e.id));
     return attendanceRecords.filter((rec) =>
-      employeeIds.has(rec.employee_id)
+      ids.has(rec.employee_id)
     );
   }, [attendanceRecords, employees]);
 
-  // 🔥 Today's attendance only
-  const todaysAttendance = useMemo(() => {
-    return validAttendance.filter((rec) => rec.date === today);
-  }, [validAttendance, today]);
+  const todaysAttendance = validAttendance.filter(
+    (rec) => rec.date === today
+  );
 
-  const totalAttendanceToday = todaysAttendance.length;
-
-  const presentCountToday = todaysAttendance.filter(
-    (rec) => rec.status === "Present"
+  const presentCount = todaysAttendance.filter(
+    (r) => r.status === "Present"
   ).length;
 
-  const attendanceRateToday =
-    totalAttendanceToday > 0
-      ? ((presentCountToday / totalAttendanceToday) * 100).toFixed(1)
+  const rate =
+    todaysAttendance.length > 0
+      ? ((presentCount / todaysAttendance.length) * 100).toFixed(1)
       : 0;
 
-  const recentAttendance = validAttendance
-    .slice(-5)
-    .reverse();
+  const recentAttendance = validAttendance.slice(-5).reverse();
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className="space-y-10"
-    >
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-800">
-          Dashboard Overview
-        </h1>
-        <p className="text-gray-500 mt-1">
-          Summary of employees and today’s attendance performance.
-        </p>
+    <div className="space-y-8">
+      {/* HEADER */}
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">
+            Welcome back 👋
+          </h1>
+          <p className="text-gray-500">
+            Here's what’s happening today
+          </p>
+        </div>
+
+        <div className="bg-white px-4 py-2 rounded-lg shadow-sm border text-sm text-gray-600">
+          📅 {today}
+        </div>
       </div>
 
-      {/* Loading */}
-      {(employeesLoading || attendanceLoading) && (
-        <div className="flex justify-center py-10">
-          <Loader2 className="animate-spin" />
-        </div>
-      )}
+      {/* STATS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+        <StatCard
+          title="Total Employees"
+          value={totalEmployees}
+          icon={<Users />}
+          color="bg-blue-50 text-blue-600"
+        />
 
-      {/* Stats */}
-      <motion.div
-        className="grid grid-cols-1 md:grid-cols-4 gap-6"
-        initial="hidden"
-        animate="visible"
-        variants={{
-          hidden: {},
-          visible: {
-            transition: { staggerChildren: 0.1 },
-          },
-        }}
-      >
-        <StatCard title="Total Employees" value={totalEmployees} />
         <StatCard
           title="Today's Records"
-          value={totalAttendanceToday}
+          value={todaysAttendance.length}
+          icon={<CalendarCheck />}
+          color="bg-purple-50 text-purple-600"
         />
-        <StatCard
-          title="Today's Present"
-          value={presentCountToday}
-        />
-        <StatCard
-          title="Today's Attendance Rate"
-          value={`${attendanceRateToday}%`}
-        />
-      </motion.div>
 
-      {/* Recent Attendance */}
-      <motion.div
-        className="bg-white rounded-2xl shadow-sm border overflow-hidden"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-      >
-        <div className="p-6 border-b">
-          <h2 className="text-lg font-semibold text-gray-700">
-            Recent Attendance
-          </h2>
-        </div>
+        <StatCard
+          title="Present Today"
+          value={presentCount}
+          icon={<UserCheck />}
+          color="bg-green-50 text-green-600"
+        />
 
-        {recentAttendance.length === 0 && (
-          <div className="p-10 text-center text-gray-500">
-            No attendance records available.
+        <StatCard
+          title="Attendance Rate"
+          value={`${rate}%`}
+          icon={<Percent />}
+          color="bg-orange-50 text-orange-600"
+        />
+      </div>
+
+      {/* GRID SECTION */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        {/* RECENT ATTENDANCE */}
+        <motion.div
+          className="xl:col-span-2 bg-white rounded-2xl shadow-sm border"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          <div className="p-6 border-b flex justify-between items-center">
+            <h2 className="font-semibold text-gray-700">
+              Recent Attendance
+            </h2>
           </div>
-        )}
 
-        {recentAttendance.length > 0 && (
-          <table className="w-full text-left">
-            <thead className="bg-gray-50 text-gray-600 text-sm uppercase">
-              <tr>
-                <th className="px-6 py-4">Employee</th>
-                <th className="px-6 py-4">Date</th>
-                <th className="px-6 py-4">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {recentAttendance.map((rec) => (
-                <tr key={rec.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 font-medium text-gray-800">
-                    {employeeMap[rec.employee_id]}
-                  </td>
-                  <td className="px-6 py-4 text-gray-600">
-                    {rec.date}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        rec.status === "Present"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
-                    >
-                      {rec.status}
-                    </span>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-gray-500 uppercase text-xs">
+                <tr>
+                  <th className="p-4 text-left">Employee</th>
+                  <th className="p-4 text-left">Date</th>
+                  <th className="p-4 text-left">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </motion.div>
-    </motion.div>
+              </thead>
+
+              <tbody>
+                {recentAttendance.map((rec) => (
+                  <tr
+                    key={rec.id}
+                    className="border-t hover:bg-gray-50 transition"
+                  >
+                    <td className="p-4 font-medium text-gray-800">
+                      {employeeMap[rec.employee_id]}
+                    </td>
+
+                    <td className="p-4 text-gray-500">
+                      {rec.date}
+                    </td>
+
+                    <td className="p-4">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          rec.status === "Present"
+                            ? "bg-green-100 text-green-600"
+                            : "bg-red-100 text-red-600"
+                        }`}
+                      >
+                        {rec.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+
+                {recentAttendance.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan="3"
+                      className="text-center p-6 text-gray-400"
+                    >
+                      No records found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </motion.div>
+
+        {/* QUICK SUMMARY PANEL */}
+        <div className="bg-white rounded-2xl shadow-sm border p-6 space-y-4">
+          <h2 className="font-semibold text-gray-700">
+            Quick Summary
+          </h2>
+
+          <SummaryItem
+            label="Total Employees"
+            value={totalEmployees}
+          />
+          <SummaryItem
+            label="Present Today"
+            value={presentCount}
+          />
+          <SummaryItem
+            label="Absent Today"
+            value={
+              todaysAttendance.length - presentCount
+            }
+          />
+          <SummaryItem label="Attendance %" value={`${rate}%`} />
+        </div>
+      </div>
+    </div>
   );
 }
 
-function StatCard({ title, value }) {
+/* Stat Card */
+function StatCard({ title, value, icon, color }) {
   return (
     <motion.div
-      variants={{
-        hidden: { opacity: 0, y: 20 },
-        visible: { opacity: 1, y: 0 },
-      }}
-      transition={{ duration: 0.4 }}
-      className="bg-white rounded-2xl shadow-sm border p-6 hover:shadow-md transition"
+      whileHover={{ y: -5 }}
+      className="bg-white rounded-2xl p-5 shadow-sm border flex justify-between items-center"
     >
-      <p className="text-gray-500 text-sm">{title}</p>
-      <h3 className="text-3xl font-bold text-gray-800 mt-2">
-        {value}
-      </h3>
+      <div>
+        <p className="text-gray-500 text-sm">{title}</p>
+        <h2 className="text-2xl font-bold text-gray-800 mt-1">
+          {value}
+        </h2>
+      </div>
+
+      <div className={`p-3 rounded-lg ${color}`}>
+        {icon}
+      </div>
     </motion.div>
   );
 }
 
-export default Dashboard;
+/* Summary Item */
+function SummaryItem({ label, value }) {
+  return (
+    <div className="flex justify-between text-sm text-gray-600">
+      <span>{label}</span>
+      <span className="font-semibold text-gray-800">
+        {value}
+      </span>
+    </div>
+  );
+}
